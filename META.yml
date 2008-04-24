@@ -1,0 +1,25 @@
+---
+name: Test-Approx
+version: 0.01
+author:
+  - 'Steve Purkis <spurkis@cpan.org>'
+abstract: encode lat/lngs to Google Maps Polylines
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
+requires:
+  Test::Builder: 0.01
+  Text::LevenshteinXS: 0.03
+  perl: 5.6.0
+build_requires:
+  Module::Build: 0.20
+  Test::Builder: 0.01
+  Test::More: 0.01
+provides:
+  Test::Approx:
+    file: lib/Test/Approx.pm
+    version: 0.01
+generated_by: Module::Build version 0.2808
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
