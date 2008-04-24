@@ -1,0 +1,52 @@
+NAME
+    Geo::Google::PolylineEncoder - encode lat/lngs to Google Maps Polylines
+
+SYNOPSIS
+      use Test::Approx 'no_plan';
+
+      is_approx( 'abcd', 'abcd', 'equal strings' );
+      is_approx( 1234, 1234, 'equal numbers' );
+
+      # fails as the default edit tolerance is 5% of avg string length:
+      is_approx( 'abcdefg', 'abcgfe', 'diff strings' );
+
+      # passes if you set the tolerance yourself:
+      is_approx( 'abcdefg', 'abcgfe', 'diff strings', '50%' );
+
+      # you can set tolerance as a number too:
+      is_approx( 'abcdefg', 'abcgfe', 'diff strings', 5 );
+
+DESCRIPTION
+    This module lets you test if two strings are *approximately* equal. Yes,
+    that sounds a bit wrong at first - surely you know if they should be
+    equal or not? But there are actually valid cases when you don't / can't
+    know. This module is meant for those rare cases when close is good
+    enough.
+
+FUNCTIONS
+    is_approx( $str1, $str2 [, $test_name, $edit_threshold ] )
+        Tests if $str1 is approximately equal to $str2 by using
+        Text::LevenshteinXS to compute the edit distance between the two
+        strings.
+
+        If you don't pass a $test_name, it gets named for you.
+
+        If $edit_threshold is set, it is used to determine how many edits
+        are allowed before a test failure. Otherwise, the default value is
+        set to "5% the average lengths of the two strings" or 1 (whichever
+        is larger). You can pass $edit_threshold as either an integer, or a
+        percentage (in a string, ie: use '6%' not 0.06).
+
+EXPORTS
+        "is_approx"
+
+AUTHOR
+        Steve Purkis <spurkis@cpan.org>
+
+COPYRIGHT
+        Copyright (c) 2008 Steve Purkis. Released under the same terms as
+        Perl itself.
+
+SEE ALSO
+        Text::LevenshteinXS, Test::Builder
+
