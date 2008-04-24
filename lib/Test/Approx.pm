@@ -1,6 +1,6 @@
 =head1 NAME
 
-Geo::Google::PolylineEncoder - encode lat/lngs to Google Maps Polylines
+Test::Approx - compare two strings for equality using Levenshtein distances
 
 =head1 SYNOPSIS
 
@@ -31,7 +31,7 @@ use Test::Builder;
 use base 'Exporter';
 our @EXPORT = qw( is_approx );
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 our $Test = Test::Builder->new;
 
