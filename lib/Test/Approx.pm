@@ -16,22 +16,22 @@ Test::Approx - compare two things for approximate equality
   is_approx( 1, 1.001, 'approx given decimal number & integer' );
   is_approx( 51.60334, 51.603335, 'approx decimal numbers' );
 
-  # default Levenshtein edit threshold is 5% of avg string length:
-  is_approx( 'abcdefg', 'abcgfe', 'str threshold' ); # fail
+  # default Levenshtein edit tolerance is 5% of avg string length:
+  is_approx( 'abcdefg', 'abcgfe', 'str tolerance' ); # fail
 
-  # default difference threshold is 5% of first number:
-  is_approx( 1, 1.04, 'num threshold' ); # fail
-  is_approx( 1, 1.05, 'num threshold' ); # fail
+  # default difference tolerance is 5% of first number:
+  is_approx( 1, 1.04, 'num tolerance' ); # fail
+  is_approx( 1, 1.05, 'num tolerance' ); # fail
 
-  # default difference threshold is 5% of first integer, or 1:
-  is_approx( 1, 2, 'int threshold' ); # pass
-  is_approx( 100, 105, 'int threshold' ); # pass
-  is_approx( 100, 106, 'int threshold' ); # fail
+  # default difference tolerance is 5% of first integer, or 1:
+  is_approx( 1, 2, 'int tolerance' ); # pass
+  is_approx( 100, 105, 'int tolerance' ); # pass
+  is_approx( 100, 106, 'int tolerance' ); # fail
 
-  # you can set the threshold yourself:
+  # you can set the tolerance yourself:
   is_approx( 'abcdefg', 'abcgfe', 'diff strings', '50%' ); # pass
 
-  # you can set threshold as a number too:
+  # you can set tolerance as a number too:
   is_approx( 'abcdefg', 'abcgfe', 'diff strings', 6 );
 
   # you can force compare as string, number, or integer:
@@ -54,11 +54,10 @@ use base 'Exporter';
 our @EXPORT = qw( is_approx is_approx_str is_approx_num is_approx_int );
 
 our $VERSION = 0.03;
-our %DEFAULT_THRESHOLD = (
-			  # these are all given as percentages
-			  str => 0.05,
-			  num => 0.05,
-			  int => 0.05,
+our %DEFAULT_TOLERANCE = (
+			  str => '5%',
+			  num => '5%',
+			  int => '5%',
 			 );
 our $Test = Test::Builder->new;
 
@@ -84,7 +83,7 @@ sub check_type {
 }
 
 sub is_approx {
-    my ($arg1, $arg2, $msg, $threshold) = @_;
+    my ($arg1, $arg2, $msg, $tolerance) = @_;
 
     local $Test::Builder::Level = $Test::Builder::Level + 1;
 
@@ -109,11 +108,12 @@ sub is_approx {
 }
 
 sub is_approx_str {
-    my ($str1, $str2, $msg, $threshold) = @_;
+    my ($str1, $str2, $msg, $tolerance) = @_;
 
     # clean input & avoid warnings
     $str1 = '' unless defined $str1;
     $str2 = '' unless defined $str2;
+    $tolerance = $DEFAULT_TOLERANCE{str} unless defined( $tolerance );
 
     # build some diagnostics info
     my $short1 = length($str1) > 8 ? substr($str1, 0, 5) . '...' : $str1;
@@ -124,18 +124,18 @@ sub is_approx_str {
     $msg = $msg2 unless defined($msg);
 
     # figure out what to use as the threshold
-    my $percent = $DEFAULT_THRESHOLD{str};
-    if (defined($threshold) && $threshold =~ /^(.+)%$/) {
-	# threshold was given as a percentage, so calculate it:
-	$percent = $1 / 100;
-	$threshold = undef;
+    my $threshold;
+    if ($tolerance =~ /^(.+)%$/) {
+	# tolerance is a percentage
+	my $percent = $1 / 100;
+	# calculate threshold from a percentage:
+	# x% of average string length, or 1
+	$threshold = int(( (length($str1)+length($str2))/2 )*$percent) || 1;
+    } else {
+	# tolerance is already a threshold
+	$threshold = $tolerance;
     }
 
-    # calculate threshold as a percentage?
-    if (!defined $threshold) {
-	# default: 5% of average string length, or 1
-	$threshold = int(( (length($str1)+length($str2))/2 )*$percent) || 1;
-    }
 
     # we've got a threshold, now do the test:
     my $dist = distance($str1, $str2);
@@ -146,14 +146,12 @@ sub is_approx_str {
 }
 
 sub is_approx_num {
-    my ($num1, $num2, $msg, $threshold) = @_;
+    my ($num1, $num2, $msg, $tolerance) = @_;
 
     # clean input & avoid warnings
-    $num1 = '' unless defined $num1;
-    $num2 = '' unless defined $num2;
-
-    $num1 = strtod( $num1 ); # ignore any errors
-    $num2 = strtod( $num2 ); # ignore any errors
+    $num1 = strtod( defined $num1 ? $num1 : '' ); # ignore any errors
+    $num2 = strtod( defined $num2 ? $num2 : '' ); # ignore any errors
+    $tolerance = $DEFAULT_TOLERANCE{num} unless defined( $tolerance );
 
     # build some diagnostics info
     my $short1 = length($num1) > 8 ? substr($num1, 0, 5) . '...' : $num1;
@@ -164,19 +162,17 @@ sub is_approx_num {
     $msg = $msg2 unless defined($msg);
 
     # figure out what to use as the threshold
-    my $percent = $DEFAULT_THRESHOLD{num};
-    if (defined($threshold) && $threshold =~ /^(.+)%$/) {
-	# threshold was given as a percentage, so calculate it:
-	$percent = $1 / 100;
-	$threshold = undef;
-    }
-
-    # calculate threshold as a percentage?
-    if (!defined $threshold) {
-	# set threshold to x% of num1
+    my $threshold;
+    if ($tolerance =~ /^(.+)%$/) {
+	# tolerance is a percentage
+	my $percent = $1 / 100;
+	# calculate threshold from a percentage: x% of num1
 	# strtod() to get around weird bug:
 	# $dist = 0.05; $threshold = 0.05; $dist <= $threshold; # false ??!?
 	$threshold = strtod( abs( $num1 * $percent ) );
+    } else {
+	# tolerance is already a threshold
+	$threshold = $tolerance;
     }
 
     # we've got a threshold, now do the test:
@@ -190,9 +186,13 @@ sub is_approx_num {
 }
 
 sub is_approx_int {
-    my ($int1, $int2, $msg, $threshold) = @_;
+    my ($int1, $int2, $msg, $tolerance) = @_;
 
     # clean input & avoid warnings
+#    $int1 = strtod( defined $int1 ? $int1 : '' ); # ignore any errors
+#    $int2 = strtod( defined $int2 ? $int2 : '' ); # ignore any errors
+    $tolerance = $DEFAULT_TOLERANCE{int} unless defined( $tolerance );
+
     $int1 = '' unless defined $int1;
     $int2 = '' unless defined $int2;
 
@@ -211,19 +211,17 @@ sub is_approx_int {
     $msg = $msg2 unless defined($msg);
 
     # figure out what to use as the threshold
-    my $percent = $DEFAULT_THRESHOLD{int};
-    if (defined($threshold) && $threshold =~ /^(.+)%$/) {
-	# threshold was given as a percentage, so calculate it:
-	$percent = $1 / 100;
-	$threshold = undef;
-    }
-
-    # calculate threshold as a percentage?
-    if (!defined $threshold) {
-	# set threshold to x% of int1
+    my $threshold;
+    if ($tolerance =~ /^(.+)%$/) {
+	# tolerance is a percentage
+	my $percent = $1 / 100;
+	# calculate threshold from a percentage: x% of num1 || 1
 	# strtod() to get around weird bug:
 	# $dist = 0.05; $threshold = 0.05; $dist <= $threshold; # false ??!?
 	$threshold = strtod( abs( int( $int1 * $percent ) ) ) || 1;
+    } else {
+	# tolerance is already a threshold
+	$threshold = $tolerance;
     }
 
     # we've got a threshold, now do the test:
@@ -243,7 +241,7 @@ __END__
 
 =head1 DESCRIPTION
 
-This module lets you test if two strings are I<approximately> equal.  Yes, that
+This module lets you test if two things are I<approximately> equal.  Yes, that
 sounds a bit wrong at first - surely you know if they should be equal or not?
 But there are actually valid cases when you don't / can't know.  This module is
 meant for those rare cases when close is good enough.
@@ -252,18 +250,41 @@ meant for those rare cases when close is good enough.
 
 =over 4
 
-=item is_approx( $str1, $str2 [, $test_name, $edit_threshold ] )
+=item is_approx( $arg1, $arg2 [, $test_name, $tolerance ] )
 
-Tests if C<$str1> is approximately equal to C<$str2> by using L<Text::LevenshteinXS>
-to compute the edit distance between the two strings.
+Tests if two scalars C<$arg1> & C<$arg2> are approximately equal by using one
+of: L</is_approx_str>, L</is_approx_num> or L<is_approx_int>.
+
+C<$tolerance> is used to determine how different the scalars can be, it
+defaults to C<5%>.  It can also be set as a number representing a threshold.
+To determine which:
+
+  $tolerance = '6%'; # threshold will be calculated at 6%
+  $tolerance = 0.06; # threshold = 0.06
+
+See the individual functions to determine how C<$tolerance> is used.
 
 If you don't pass a C<$test_name>, it gets named for you.
 
-If C<$edit_threshold> is set, it is used to determine how many edits are allowed
-before a test failure.  Otherwise, the default value is set to C<5% the average
-lengths of the two strings> or C<1> (whichever is larger).  You can pass 
-C<$edit_threshold> as either an integer, or a percentage (in a string, ie: use
-C<'6%'> not C<0.06>).
+=item is_approx_str( $str1, $str2 [, $test_name, $tolerance ] )
+
+Tests if C<$str1> is approximately equal to C<$str2> by using
+L<Text::LevenshteinXS> to compute the edit distance between the two strings,
+and comparing that to C<$tolerance>.
+
+C<$tolerance> is used to determine how many edits are allowed before the
+comparison test fails.  If a percentage is given, the edit distance threshold
+will be set to C<x%> of the I<average lengths of the two strings>.  eg:
+
+  $edit_threshold = int( $x_percent * avg(length($str1), length($str2)) );
+
+If that's less than 0, it defaults to C<1>.  You can also pass C<$tolerance>
+in as an number.  To avoid confusion:
+
+  $tolerance = '6%'; # 6%, calculate edit distance threshold
+  $tolerance = 0.06; # threshold = int( 0.06 ) = 0
+
+If you don't pass a C<$test_name>, it gets named for you.
 
 =head1 EXPORTS
 
