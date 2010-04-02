@@ -255,16 +255,16 @@ meant for those rare cases when close is good enough.
 Tests if two scalars C<$arg1> & C<$arg2> are approximately equal by using one
 of: L</is_approx_str>, L</is_approx_num> or L<is_approx_int>.
 
+C<$test_name> defaults to C<'arg1' =~ 'arg2'>.
+
 C<$tolerance> is used to determine how different the scalars can be, it
 defaults to C<5%>.  It can also be set as a number representing a threshold.
 To determine which:
 
-  $tolerance = '6%'; # threshold will be calculated at 6%
+  $tolerance = '6%'; # threshold = calculated at 6%
   $tolerance = 0.06; # threshold = 0.06
 
 See the individual functions to determine how C<$tolerance> is used.
-
-If you don't pass a C<$test_name>, it gets named for you.
 
 =item is_approx_str( $str1, $str2 [, $test_name, $tolerance ] )
 
@@ -281,10 +281,39 @@ will be set to C<x%> of the I<average lengths of the two strings>.  eg:
 If that's less than 0, it defaults to C<1>.  You can also pass C<$tolerance>
 in as an number.  To avoid confusion:
 
-  $tolerance = '6%'; # 6%, calculate edit distance threshold
+  $tolerance = '6%'; # threshold = 6% of avg strlen
   $tolerance = 0.06; # threshold = int( 0.06 ) = 0
 
-If you don't pass a C<$test_name>, it gets named for you.
+=item is_approx_num( $num1, $num2 [, $test_name, $tolerance ] )
+
+Tests if C<$num1> is approximately equal to C<$num2> by calculating the
+distance between them and comparing that to C<$tolerance>.
+
+If C<$tolerance> is a percentage, the distance threshold will be set to
+C<x%> of the I<first number>, eg:
+
+  $threshold = $x_percent * $num1;
+
+Note that this can be 0 > $t > 1, which is probably what you want.  To avoid
+confusion:
+
+  $tolerance = '6%'; # threshold = 6% of $num1
+  $tolerance = 0.06; # threshold = 0.06
+
+=item is_approx_int( $int1, $int2 [, $test_name, $tolerance ] )
+
+Tests if C<$int1> is approximately equal to C<$int2> by calculating the
+distance between them and comparing that to C<$tolerance>.
+
+If C<$tolerance> is a percentage, the distance threshold will be set to
+C<x%> of the I<first integer>, or 1.  Eg:
+
+  $threshold = int( $x_percent * $int1 ) || 1;
+
+To avoid confusion:
+
+  $tolerance = '6%'; # threshold = 6% of $int1
+  $tolerance = 0.06; # threshold = 0.06
 
 =head1 EXPORTS
 
