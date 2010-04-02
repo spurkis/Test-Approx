@@ -46,7 +46,7 @@ package Test::Approx;
 use strict;
 use warnings;
 
-use POSIX qw( strtod );
+use POSIX qw( strtod strtol );
 use Text::LevenshteinXS qw(distance);
 use Test::Builder;
 
@@ -189,18 +189,9 @@ sub is_approx_int {
     my ($int1, $int2, $msg, $tolerance) = @_;
 
     # clean input & avoid warnings
-#    $int1 = strtod( defined $int1 ? $int1 : '' ); # ignore any errors
-#    $int2 = strtod( defined $int2 ? $int2 : '' ); # ignore any errors
+    $int1 = strtol( defined $int1 ? $int1 : '' ); # ignore any errors
+    $int2 = strtol( defined $int2 ? $int2 : '' ); # ignore any errors
     $tolerance = $DEFAULT_TOLERANCE{int} unless defined( $tolerance );
-
-    $int1 = '' unless defined $int1;
-    $int2 = '' unless defined $int2;
-
-    ($int1) = ($int1 =~ /(\-?\d+)/);
-    ($int2) = ($int2 =~ /(\-?\d+)/);
-
-    $int1 = 0 unless defined( $int1 );
-    $int2 = 0 unless defined( $int2 );
 
     # build some diagnostics info
     my $short1 = length($int1) > 8 ? substr($int1, 0, 5) . '...' : $int1;
@@ -303,7 +294,8 @@ confusion:
 =item is_approx_int( $int1, $int2 [, $test_name, $tolerance ] )
 
 Tests if C<$int1> is approximately equal to C<$int2> by calculating the
-distance between them and comparing that to C<$tolerance>.
+distance between them and comparing that to C<$tolerance>.  This is slightly
+different to L</is_approx_num> as all fractions are removed.
 
 If C<$tolerance> is a percentage, the distance threshold will be set to
 C<x%> of the I<first integer>, or 1.  Eg:
