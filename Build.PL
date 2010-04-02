@@ -28,6 +28,7 @@ my $build = Module::Build->new
    requires           => {
 			  'perl'          => '5.6.0',
 			  'Text::LevenshteinXS' => '0.03',
+			  'POSIX'         => '0.01',
 			  'Test::Builder' => '0.01',
 		         },
    build_requires     => {
